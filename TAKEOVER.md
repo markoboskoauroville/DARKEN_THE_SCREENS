@@ -1,5 +1,5 @@
 # TAKEOVER
 
-**30.10.2026, v1.** Built and installed; tested by the notification: dark measured black on both screens (screencapture: RGB 0), light gave the picture back. In the star under Mac. Not yet pressed by Marko's own hand: ⌃⌥⌘F1 on his keyboard (on the MacBook's keyboard, F1 may need fn unless "Use F1, F2… as standard function keys" is on).
+**30.10.2026, v2.** The darkness model of v1 (gamma to zero and black windows above everything) blacked out VNC as well. Marko asked for the brightness keys instead. v2 presses key code 145 (brightness down) sixteen times and 144 (up) once to darken, and 144 sixteen times to light. Built and installed. Measured from the shell: one press of 145 took the built-in display from 1.000 to 0.918, and 144 put it back.
 
-Next: whatever Marko says after his first press.
+**Waiting:** Marko gives the app Accessibility (PERMISSIONS in its window, or System Settings → Privacy & Security → Accessibility → Darken the Screens). Without it the presses are dropped silently. After that, his own press of ⌃⌥⌘F1, and whether the BenQ follows through BetterDisplay.

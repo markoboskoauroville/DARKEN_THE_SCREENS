@@ -1,87 +1,70 @@
 // Darken the Screens (Mantra). Marko, 30.10.2026: "Now build another startup called Darken the Screens. It's going to
 // use the shortcut key Control + Option + Command + F1 to darken both screens to complete darkness, and the same shortcut
 // again to lighten the screen to full lightness", then "Repeating the shortcut key Control Option Command F1."
+// v2, the same day: "It needs to work the same way as when I press the brightness keys with the sun symbol ... The light
+// on the screen should go down, but the screen should not go completely dark", "The screen needs to stay visible over VNC",
+// "emulate key pressing on the mac keyboard to darken and lighten the leds on the screen, only that".
 //
-// ⌃⌥⌘F1 goes between the two extremes. Dark: every display's gamma goes to zero (the picture and the cursor), and a
-// black window above everything covers any display whose gamma cannot be set. Light: the displays' own colour settings
-// come back and the windows go. If the app ends while dark, macOS gives the gamma back by itself.
+// ⌃⌥⌘F1 goes between the two: dark presses the brightness-down key (the sun) to the bottom and once up again, so the light
+// is at its lowest step that still lights; light presses brightness-up to full. Only the keys: the picture is untouched,
+// so VNC and screencapture see it as before. Posting the keys needs Accessibility (PERMISSIONS, top right).
 import AppKit
 import Carbon
 
-let VERSION = 1
+let VERSION = 2
 let NAME = "Darken the Screens (Mantra)"
 
 enum Ink {
     static let green = NSColor(calibratedRed: 0.30, green: 0.82, blue: 0.45, alpha: 1)
     static let dim = NSColor(calibratedWhite: 0.55, alpha: 1)
     static let red = NSColor(calibratedRed: 0.95, green: 0.33, blue: 0.30, alpha: 1)
+    static let amber = NSColor(calibratedRed: 1.0, green: 0.70, blue: 0.20, alpha: 1)
     static let x = NSColor(calibratedRed: 0x7A / 255, green: 0x80 / 255, blue: 0x87 / 255, alpha: 1)
 }
 
-// MARK: the darkness
+// MARK: the darkness, by the brightness keys
 
 final class Darkness {
     static let shared = Darkness()
     private(set) var dark = false
-    private var curtains: [NSWindow] = []
-    private var fade: Timer?
+    private var queue: [CGKeyCode] = []
+    private var tick: Timer?
     var changed: () -> Void = {}
+
+    static let up: CGKeyCode = 144, down: CGKeyCode = 145                        // the sun keys, as key codes (the NX media
+                                                                                // event does nothing on Apple silicon)
+    static let steps = 16                                                       // the keyboard's steps from off to full
 
     func toggle() { dark ? lighten() : darken() }
 
-    func displays() -> [CGDirectDisplayID] {
-        var n: UInt32 = 0
-        CGGetOnlineDisplayList(0, nil, &n)
-        var ids = [CGDirectDisplayID](repeating: 0, count: Int(n))
-        CGGetOnlineDisplayList(n, &ids, &n)
-        return Array(ids.prefix(Int(n)))
-    }
+    // the bottom (16 down), then one up: the lowest step that still lights
+    func darken() { dark = true; press(Array(repeating: Darkness.down, count: Darkness.steps) + [Darkness.up]); changed() }
+    func lighten() { dark = false; press(Array(repeating: Darkness.up, count: Darkness.steps)); changed() }
 
-    // the gamma from what it is now to `to` (0 dark, 1 the display's own), in 0.4 s
-    func ramp(to target: Float, done: @escaping () -> Void) {
-        fade?.invalidate()
-        let ids = displays(), steps = 12
-        var i = 0
-        fade = Timer.scheduledTimer(withTimeInterval: 0.4 / Double(steps), repeats: true) { t in
-            i += 1
-            let k = Float(i) / Float(steps), level = target == 0 ? 1 - k : k
-            for d in ids { CGSetDisplayTransferByFormula(d, 0, level, 1, 0, level, 1, 0, level, 1) }
-            if i >= steps { t.invalidate(); done() }
+    // the presses one after another, 30 ms apart, once ⌃⌥⌘ are let go (⌥ with the sun opens Displays settings)
+    private func press(_ keys: [CGKeyCode]) {
+        tick?.invalidate()
+        queue = keys
+        let since = Date()
+        tick = Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { [weak self] t in
+            guard let self else { t.invalidate(); return }
+            let held = NSEvent.modifierFlags.intersection([.control, .option, .command, .shift])
+            if !held.isEmpty && Date().timeIntervalSince(since) < 2 { return }
+            guard !self.queue.isEmpty else { t.invalidate(); return }
+            Darkness.key(self.queue.removeFirst())
         }
     }
 
-    func darken() {
-        guard !dark else { return }
-        dark = true
-        // the curtains first, transparent, then black: a display that ignores gamma (AirPlay, Sidecar) still goes dark
-        curtains = NSScreen.screens.map { s in
-            let w = NSWindow(contentRect: s.frame, styleMask: .borderless, backing: .buffered, defer: false)
-            w.level = .screenSaver
-            w.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
-            w.backgroundColor = .black
-            w.alphaValue = 0
-            w.ignoresMouseEvents = true
-            w.isReleasedWhenClosed = false
-            w.setFrame(s.frame, display: false)
-            w.orderFrontRegardless()
-            return w
+    // one press of a brightness key, down and up, with no modifiers (⌃⌥⌘ may still be on the keyboard's state)
+    static func key(_ code: CGKeyCode) {
+        for down in [true, false] {
+            let e = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: down)
+            e?.flags = []
+            e?.post(tap: .cghidEventTap)
         }
-        NSAnimationContext.runAnimationGroup { c in c.duration = 0.4; for w in curtains { w.animator().alphaValue = 1 } }
-        ramp(to: 0) {}
-        NSCursor.setHiddenUntilMouseMoves(true)
-        changed()
     }
 
-    func lighten() {
-        guard dark else { return }
-        dark = false
-        let going = curtains
-        curtains = []
-        ramp(to: 1) { CGDisplayRestoreColorSyncSettings() }
-        NSAnimationContext.runAnimationGroup({ c in c.duration = 0.4; for w in going { w.animator().alphaValue = 0 } },
-                                             completionHandler: { for w in going { w.orderOut(nil) } })
-        changed()
-    }
+    static var allowed: Bool { CGPreflightPostEventAccess() }
 }
 
 // MARK: ⌃⌥⌘F1, a Carbon hot key (no permission needed, the key does not reach the front app)
@@ -104,6 +87,12 @@ final class Window: NSObject {
     let window: NSWindow
     let state = NSTextField(labelWithString: "")
     let button = NSButton(title: "", target: nil, action: nil)
+    lazy var perm: NSButton = {
+        let b = NSButton(title: "PERMISSIONS", target: self, action: #selector(permissions))
+        b.isBordered = false
+        b.attributedTitle = NSAttributedString(string: "PERMISSIONS", attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .bold), .foregroundColor: Ink.amber])
+        return b
+    }()
 
     init(keyOK: Bool) {
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 220), styleMask: [.titled, .closable, .resizable],
@@ -135,11 +124,13 @@ final class Window: NSObject {
         x.heightAnchor.constraint(equalToConstant: 28).isActive = true
         let spacer = NSView()
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let top = NSStackView(views: [title, word("ON", Ink.green, nil), word("OFF", Ink.dim, #selector(quit)), spacer, x])
+        perm.isHidden = Darkness.allowed
+        perm.toolTip = "Posting the brightness keys needs Accessibility: click to open that page of System Settings"
+        let top = NSStackView(views: [title, word("ON", Ink.green, nil), word("OFF", Ink.dim, #selector(quit)), spacer, perm, x])
         top.spacing = 10
 
         let key = wrapping(keyOK
-            ? "⌃⌥⌘F1 darkens every screen to complete darkness; ⌃⌥⌘F1 again brings them back to full light."
+            ? "⌃⌥⌘F1 presses the brightness key down to the lowest light; ⌃⌥⌘F1 again presses it up to full light. The picture stays, VNC sees it."
             : "⌃⌥⌘F1 is taken by another app, so the key does nothing. The button below still works.")
         if !keyOK { key.textColor = Ink.red }
         state.font = .monospacedSystemFont(ofSize: 12, weight: .semibold)
@@ -167,6 +158,7 @@ final class Window: NSObject {
         button.title = d ? "Light the screens" : "Darken the screens"
         state.stringValue = d ? "DARK" : "LIGHT"
         state.textColor = d ? Ink.dim : Ink.green
+        perm.isHidden = Darkness.allowed
     }
 
     func open() {
@@ -179,6 +171,10 @@ final class Window: NSObject {
     @objc func toggle() {
         // from the window: give it a moment so the click is let go before the dark comes
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { Darkness.shared.toggle() }
+    }
+    @objc func permissions() {
+        CGRequestPostEventAccess()
+        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
     }
     @objc func close() { window.orderOut(nil) }
     @objc func quit() { NSApp.terminate(nil) }
@@ -194,10 +190,7 @@ final class Delegate: NSObject, NSApplicationDelegate {
         Darkness.shared.changed = { [weak self] in self?.win.show() }
         // --login (the star at login): no window; the key works from the first moment
         if !CommandLine.arguments.contains("--login") { win.open() }
-        // a display plugged in or out while dark: the curtains follow
-        NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { _ in
-            if Darkness.shared.dark { Darkness.shared.lighten(); Darkness.shared.darken() }
-        }
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in self?.win.show() }
         // tests and the star: com.mantra.darkenthescreens.toggle does what the key does
         DistributedNotificationCenter.default().addObserver(forName: Notification.Name("com.mantra.darkenthescreens.toggle"), object: nil, queue: .main) { _ in
             Darkness.shared.toggle()
@@ -205,7 +198,6 @@ final class Delegate: NSObject, NSApplicationDelegate {
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ s: NSApplication) -> Bool { false }
     func applicationShouldHandleReopen(_ s: NSApplication, hasVisibleWindows: Bool) -> Bool { win.open(); return false }
-    func applicationWillTerminate(_ n: Notification) { CGDisplayRestoreColorSyncSettings() }
 }
 
 let app = NSApplication.shared

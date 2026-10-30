@@ -1,10 +1,10 @@
 # Darken the Screens (Mantra)
 
-**v1 · github.com/markoboskoauroville/DARKEN_THE_SCREENS (private) · /Applications/Darken the Screens (Mantra).app**
+**v2 · github.com/markoboskoauroville/DARKEN_THE_SCREENS (private) · /Applications/Darken the Screens (Mantra).app**
 
-**⌃⌥⌘F1** darkens every screen to complete darkness; **⌃⌥⌘F1** again brings them back to full light. Dark means every display's gamma goes to zero (the picture and the cursor) and a black window covers each screen above everything, so a display that ignores gamma goes dark as well. Light gives the displays their own colour settings back and the windows fade away (0.4 s each way). If the app ends while the screens are dark, macOS gives the gamma back by itself.
+**⌃⌥⌘F1** presses the brightness-down key (the sun on the MacBook keyboard) to the bottom and once back up, so the screen is at its lowest light that still shows; **⌃⌥⌘F1** again presses brightness-up to full light. Only the keys are pressed (key codes 145 and 144, as the keyboard sends them): the picture itself is not touched, so VNC and screen sharing see it as before. BetterDisplay, if it takes the brightness keys, carries them on to the BenQ. Posting keys needs **Accessibility** for the app; while it is missing, an amber PERMISSIONS sits top right and opens that page of System Settings.
 
-Marko, 30.10.2026: *"build another startup called Darken the Screens. It's going to use the shortcut key Control + Option + Command + F1 to darken both screens to complete darkness, and the same shortcut again to lighten the screen to full lightness."*
+Marko, 30.10.2026: *"build another startup called Darken the Screens. It's going to use the shortcut key Control + Option + Command + F1 to darken both screens to complete darkness, and the same shortcut again to lighten the screen to full lightness."* v2, the same day: *"emulate key pressing on the mac keyboard to darken and lighten the leds on the screen, only that."*
 
 The window (from the star) has ON / OFF and ✕ on the first row, a button that does what the key does, and QUIT at the bottom right. Closing it leaves the app on. With `--login` (the star at login) no window opens, but the key works from the first moment. The key is a Carbon hot key: no permission needed, and the press never reaches the app in front.
 
