@@ -21,4 +21,8 @@ Then, the correction: *"The transcription is wrong. I want you to emulate key pr
 The first row as MANTRA_MANIFEST swift-apps.md "The first row of every app: ON OFF … TOP ✕": ON, OFF at the left, TOP
 (green: the window above every other, UserDefaults `onTop`, applied at launch) beside ✕ at the right; each an
 Accessibility button (`off`, `top`, `close`).
-**Status:** pending
+**Status:** done 31.10.2026 in v3 (AppKit): TOP beside ✕ on the control window (green = `.floating`, `onTop`, applied at
+launch; the darkness is the brightness keys, no overlay, so nothing else is lifted); OFF, TOP, PERMISSIONS, ✕ carry
+Accessibility identifiers; the QUIT at the bottom right removed ("No QUIT"). `--shot <png>` draws the window off screen at
+its minimum size (360 pt) and lists the identifiers: checked, nothing cut. The running copy quit by its Apple Event quit
+and reopened with `--login` (no window at login, as before).

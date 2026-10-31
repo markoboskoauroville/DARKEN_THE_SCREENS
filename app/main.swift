@@ -11,7 +11,7 @@
 import AppKit
 import Carbon
 
-let VERSION = 2
+let VERSION = 3
 let NAME = "Darken the Screens (Mantra)"
 
 enum Ink {
@@ -81,16 +81,29 @@ final class HotKey {
     }
 }
 
-// MARK: the window: ON / OFF and ✕ on the first row, the key, the switch, QUIT at the bottom right
+// MARK: the window: ON / OFF, TOP and ✕ on the first row, the key, the switch
+// v3 (Marko, 31.10.2026: "Each needs to have the same user interface elements. On, off and top"): TOP beside ✕, green =
+// this window stays above every other window (UserDefaults "onTop", applied at launch); the QUIT at the bottom right is
+// gone (MANTRA_MANIFEST swift-apps.md "No QUIT": OFF is the way out). Every word is an Accessibility button
+// (off, top, permissions, close). TOP lifts only this window; the darkness itself is the brightness keys, no window.
 
 final class Window: NSObject {
     let window: NSWindow
     let state = NSTextField(labelWithString: "")
     let button = NSButton(title: "", target: nil, action: nil)
+    var onTop = UserDefaults.standard.bool(forKey: "onTop")
+    lazy var topWord: NSButton = {
+        let b = NSButton(title: "TOP", target: self, action: #selector(toggleTop))
+        b.isBordered = false
+        b.setAccessibilityIdentifier("top"); b.setAccessibilityLabel("Top")
+        b.toolTip = "Always on top: green, this window stays above every other window"
+        return b
+    }()
     lazy var perm: NSButton = {
         let b = NSButton(title: "PERMISSIONS", target: self, action: #selector(permissions))
         b.isBordered = false
         b.attributedTitle = NSAttributedString(string: "PERMISSIONS", attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .bold), .foregroundColor: Ink.amber])
+        b.setAccessibilityIdentifier("permissions"); b.setAccessibilityLabel("Permissions")
         return b
     }()
 
@@ -122,11 +135,14 @@ final class Window: NSObject {
         x.toolTip = "Close this window; Darken the Screens stays on and ⌃⌥⌘F1 still works"
         x.widthAnchor.constraint(equalToConstant: 28).isActive = true
         x.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        x.setAccessibilityIdentifier("close"); x.setAccessibilityLabel("Close window")
+        let off = word("OFF", Ink.dim, #selector(quit))
+        off.setAccessibilityIdentifier("off"); off.setAccessibilityLabel("Off")
         let spacer = NSView()
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         perm.isHidden = Darkness.allowed
         perm.toolTip = "Posting the brightness keys needs Accessibility: click to open that page of System Settings"
-        let top = NSStackView(views: [title, word("ON", Ink.green, nil), word("OFF", Ink.dim, #selector(quit)), spacer, perm, x])
+        let top = NSStackView(views: [title, word("ON", Ink.green, nil), off, spacer, topWord, perm, x])
         top.spacing = 10
 
         let key = wrapping(keyOK
@@ -136,21 +152,32 @@ final class Window: NSObject {
         state.font = .monospacedSystemFont(ofSize: 12, weight: .semibold)
         button.target = self; button.action = #selector(toggle)
         button.bezelStyle = .rounded
-        let quitRow = NSStackView(views: [NSView(), word("QUIT", Ink.red, #selector(quit), size: 12)])
-        let col = NSStackView(views: [top, key, NSStackView(views: [button, state]), NSView(), quitRow])
+        let col = NSStackView(views: [top, key, NSStackView(views: [button, state]), NSView()])
         col.orientation = .vertical
         col.alignment = .leading
         col.spacing = 14
         col.edgeInsets = NSEdgeInsets(top: 10, left: 18, bottom: 12, right: 8)
         col.translatesAutoresizingMaskIntoConstraints = false
-        for v in [top, quitRow] { v.widthAnchor.constraint(equalTo: col.widthAnchor, constant: -26).isActive = true }
+        for v in [top] { v.widthAnchor.constraint(equalTo: col.widthAnchor, constant: -26).isActive = true }
         key.widthAnchor.constraint(equalTo: col.widthAnchor, constant: -36).isActive = true
         let root = NSView()
         root.addSubview(col)
         NSLayoutConstraint.activate([col.leadingAnchor.constraint(equalTo: root.leadingAnchor), col.trailingAnchor.constraint(equalTo: root.trailingAnchor),
                                      col.topAnchor.constraint(equalTo: root.topAnchor), col.bottomAnchor.constraint(equalTo: root.bottomAnchor)])
         window.contentView = root
+        floatTop()
         show()
+    }
+
+    func floatTop() {
+        window.level = onTop ? .floating : .normal
+        topWord.attributedTitle = NSAttributedString(string: "TOP", attributes: [.font: NSFont.monospacedSystemFont(ofSize: 13, weight: .bold), .foregroundColor: onTop ? Ink.green : Ink.dim])
+        topWord.setAccessibilityValue(onTop ? "on" : "off")
+    }
+    @objc func toggleTop() {
+        onTop.toggle()
+        UserDefaults.standard.set(onTop, forKey: "onTop")
+        floatTop()
     }
 
     func show() {
@@ -187,6 +214,29 @@ final class Delegate: NSObject, NSApplicationDelegate {
         HotKey.handler = { Darkness.shared.toggle() }
         hotkey = HotKey(code: UInt32(kVK_F1), mods: UInt32(controlKey | optionKey | cmdKey))
         win = Window(keyOK: hotkey != nil)
+        // --shot <png>: the window drawn off screen at its minimum size, then quit (a test: nothing stored, no key pressed)
+        if let i = CommandLine.arguments.firstIndex(of: "--shot"), i + 1 < CommandLine.arguments.count {
+            let w = win.window, v = w.contentView!
+            w.setContentSize(w.minSize); v.layoutSubtreeIfNeeded()
+            if let rep = v.bitmapImageRepForCachingDisplay(in: v.bounds) {
+                v.cacheDisplay(in: v.bounds, to: rep)
+                // on the window's own background, so the labels show as on screen
+                let img = NSImage(size: v.bounds.size)
+                img.lockFocus()
+                v.effectiveAppearance.performAsCurrentDrawingAppearance {
+                    NSColor.windowBackgroundColor.setFill(); NSRect(origin: .zero, size: v.bounds.size).fill()
+                }
+                rep.draw(in: NSRect(origin: .zero, size: v.bounds.size), from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+                img.unlockFocus()
+                if let t = img.tiffRepresentation, let r = NSBitmapImageRep(data: t) {
+                    try? r.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: CommandLine.arguments[i + 1]))
+                }
+            }
+            // and the Accessibility identifiers the window carries (the window itself stays off screen)
+            func ids(_ v: NSView) -> [String] { [v.accessibilityIdentifier()].filter { !$0.isEmpty } + v.subviews.flatMap(ids) }
+            print("accessibility:", ids(v).joined(separator: " "))
+            exit(0)
+        }
         Darkness.shared.changed = { [weak self] in self?.win.show() }
         // --login (the star at login): no window; the key works from the first moment
         if !CommandLine.arguments.contains("--login") { win.open() }
