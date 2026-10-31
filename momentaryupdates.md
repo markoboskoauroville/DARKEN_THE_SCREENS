@@ -13,3 +13,12 @@
 Then, the correction: *"The transcription is wrong. I want you to emulate key presses to these buttons."*
 
 **So v2:** ⌃⌥⌘F1 presses the brightness-down key (the sun) down to the lowest step that still lights, the same key again presses brightness-up to full light. No black windows, no gamma: the picture is untouched, so VNC sees it.
+
+## 31.10.2026: ON, OFF and TOP in every application
+
+> Please go to all the interface of my applications. Each needs to have the same user interface elements. On, off and top. Please build it in every application.
+
+The first row as MANTRA_MANIFEST swift-apps.md "The first row of every app: ON OFF … TOP ✕": ON, OFF at the left, TOP
+(green: the window above every other, UserDefaults `onTop`, applied at launch) beside ✕ at the right; each an
+Accessibility button (`off`, `top`, `close`).
+**Status:** pending
