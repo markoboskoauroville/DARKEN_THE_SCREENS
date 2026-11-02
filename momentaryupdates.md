@@ -31,3 +31,8 @@ and reopened with `--login` (no window at login, as before).
 > "please fix my darkening display star menu. It needs to darken both display at the same time and undarken both display at the same time"
 
 **Status:** done 2.11.2026 in v4: both displays set directly through BetterDisplay in the same moment (measured dark 0.063 built-in / 0.0 BenQ, light 1.0 / 1.0), no key presses.
+
+## 2.11.2026: to 0%, complete darkness
+> "both screens are following, but not to 0%. I want complete darkness or complete lightness. You can do one screen at a time, so that's also okay. We make it easier for you"
+
+**Status:** saved; v5 being built.
