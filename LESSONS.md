@@ -5,3 +5,4 @@
 - (30.10.2026) A press posted while ⌃⌥⌘ are still held can pick up the modifiers (⌥ with the sun key opens Displays settings). So wait until they are released, and clear the event's flags.
 - (30.10.2026) v1's black windows were in the frame itself, so VNC went black too. Darkening for the eyes only means the backlight, never the picture.
 - (2.11.2026) Brightness keys reach one display only (BetterDisplay sends them to the screen under the mouse). For both screens together set each directly: `BetterDisplay set -tagID=N -hardwareBrightness=x` (the app binary is the CLI); built-in is the one whose registryLocation has /disp0@. Use hardwareBrightness, never brightness, so no software dimming touches the picture.
+- (2.11.2026) hardwareBrightness 0 still lights (built-in and BenQ). Complete darkness = hardwareBrightness 0 plus softwareBrightness 0; the software dimming is not in the captured frame (screencapture mean unchanged), so VNC still sees the picture.

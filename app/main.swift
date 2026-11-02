@@ -11,7 +11,7 @@
 import AppKit
 import Carbon
 
-let VERSION = 4
+let VERSION = 5
 let NAME = "Darken the Screens (Mantra)"
 
 enum Ink {
@@ -33,8 +33,6 @@ final class Darkness {
     private(set) var dark = false
     var changed: () -> Void = {}
     static let tool = "/Applications/BetterDisplay.app/Contents/MacOS/BetterDisplay"
-    static let low = 0.0625                                                     // one keyboard step of sixteen: the lowest
-                                                                                // light that still lights (DDC 0 still lights)
 
     func toggle() { dark ? lighten() : darken() }
     func darken() { dark = true; set(dark: true); changed() }
@@ -44,9 +42,13 @@ final class Darkness {
     private func set(dark: Bool) {
         DispatchQueue.global().async {
             let tags = Darkness.displays()
-            for (tag, builtIn) in tags {
-                let level = dark ? (builtIn ? Darkness.low : 0) : 1
-                Darkness.run(["set", "-tagID=\(tag)", "-hardwareBrightness=\(level)"], wait: false)
+            // v5 (Marko, 2.11.2026: "not to 0%. I want complete darkness or complete lightness"): every screen to 0, the
+            // backlight and BetterDisplay's dimming both (the picture VNC sees stays: measured), and both to 1 for light
+            let level = dark ? 0 : 1
+            for (tag, _) in tags {
+                for kind in ["hardwareBrightness", "softwareBrightness"] {
+                    Darkness.run(["set", "-tagID=\(tag)", "-\(kind)=\(level)"], wait: false)
+                }
             }
         }
     }
@@ -152,7 +154,7 @@ final class Window: NSObject {
         top.spacing = 10
 
         let key = wrapping(keyOK
-            ? "⌃⌥⌘F1 dims both screens together to the lowest light; ⌃⌥⌘F1 again brings both to full light. The picture stays, VNC sees it."
+            ? "⌃⌥⌘F1 makes both screens completely dark (0%); ⌃⌥⌘F1 again brings both to full light (100%). VNC still sees the picture."
             : "⌃⌥⌘F1 is taken by another app, so the key does nothing. The button below still works.")
         if !keyOK { key.textColor = Ink.red }
         state.font = .monospacedSystemFont(ofSize: 12, weight: .semibold)

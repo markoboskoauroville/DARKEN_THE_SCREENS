@@ -1,8 +1,10 @@
 # Darken the Screens (Mantra)
 
-**v4 · github.com/markoboskoauroville/DARKEN_THE_SCREENS (private) · /Applications/Darken the Screens (Mantra).app**
+**v5 · github.com/markoboskoauroville/DARKEN_THE_SCREENS (private) · /Applications/Darken the Screens (Mantra).app**
 
-**⌃⌥⌘F1** dims **both screens at the same moment**, the MacBook's built-in to its lowest light that still lights (0.0625) and the BenQ to its lowest DDC brightness; **⌃⌥⌘F1** again brings both back to full light together. It sets the hardware brightness of every display through BetterDisplay's command line (`BetterDisplay set -tagID=… -hardwareBrightness=…`), one process per display, all started at once. The picture itself is not touched, so VNC and screen sharing see it as before. Needs BetterDisplay running (it is, from login); no Accessibility needed any more.
+**⌃⌥⌘F1** makes **both screens completely dark, 0%**, and **⌃⌥⌘F1** again brings both to **full light, 100%**. For every display BetterDisplay knows (built-in and BenQ) it sets the hardware brightness (backlight, DDC) and BetterDisplay's software dimming to 0, and both to 1 for light (`BetterDisplay set -tagID=… -hardwareBrightness=… / -softwareBrightness=…`). The captured picture stays the same (measured), so VNC and screen sharing still see everything. Needs BetterDisplay running (from login); no Accessibility.
+
+Marko, 2.11.2026, v5: *"not to 0%. I want complete darkness or complete lightness."*
 
 Marko, 2.11.2026: *"It needs to darken both display at the same time and undarken both display at the same time."*
 

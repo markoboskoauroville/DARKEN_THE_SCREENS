@@ -35,4 +35,4 @@ and reopened with `--login` (no window at login, as before).
 ## 2.11.2026: to 0%, complete darkness
 > "both screens are following, but not to 0%. I want complete darkness or complete lightness. You can do one screen at a time, so that's also okay. We make it easier for you"
 
-**Status:** saved; v5 being built.
+**Status:** done 2.11.2026 in v5: hardware and software brightness to 0 on both screens, 1 for light; measured 0/0 and 1/1, the captured picture unchanged.
