@@ -5,13 +5,13 @@
 // on the screen should go down, but the screen should not go completely dark", "The screen needs to stay visible over VNC",
 // "emulate key pressing on the mac keyboard to darken and lighten the leds on the screen, only that".
 //
-// ⌃⌥⌘F1 goes between the two: dark presses the brightness-down key (the sun) to the bottom and once up again, so the light
-// is at its lowest step that still lights; light presses brightness-up to full. Only the keys: the picture is untouched,
-// so VNC and screencapture see it as before. Posting the keys needs Accessibility (PERMISSIONS, top right).
+// ⌃⌥⌘F1 goes between the two. v4 (2.11.2026): both screens together, the built-in and the BenQ, set in the same moment
+// through BetterDisplay to their lowest light that still lights, and again to full light. Only the backlight: the picture
+// is untouched, so VNC and screencapture see it as before.
 import AppKit
 import Carbon
 
-let VERSION = 3
+let VERSION = 4
 let NAME = "Darken the Screens (Mantra)"
 
 enum Ink {
@@ -22,49 +22,55 @@ enum Ink {
     static let x = NSColor(calibratedRed: 0x7A / 255, green: 0x80 / 255, blue: 0x87 / 255, alpha: 1)
 }
 
-// MARK: the darkness, by the brightness keys
+// MARK: the darkness, both screens at once, through BetterDisplay
+// v4 (Marko, 2.11.2026: "It needs to darken both display at the same time and undarken both display at the same time"):
+// the sun keys reached only the screen BetterDisplay gave them to (the one under the mouse). Now every display is set
+// directly, all in the same moment: the backlight (built-in) and DDC (BenQ) hardware brightness, never the picture,
+// so VNC still sees it. BetterDisplay's own command line sends the order to the running BetterDisplay.
 
 final class Darkness {
     static let shared = Darkness()
     private(set) var dark = false
-    private var queue: [CGKeyCode] = []
-    private var tick: Timer?
     var changed: () -> Void = {}
-
-    static let up: CGKeyCode = 144, down: CGKeyCode = 145                        // the sun keys, as key codes (the NX media
-                                                                                // event does nothing on Apple silicon)
-    static let steps = 16                                                       // the keyboard's steps from off to full
+    static let tool = "/Applications/BetterDisplay.app/Contents/MacOS/BetterDisplay"
+    static let low = 0.0625                                                     // one keyboard step of sixteen: the lowest
+                                                                                // light that still lights (DDC 0 still lights)
 
     func toggle() { dark ? lighten() : darken() }
+    func darken() { dark = true; set(dark: true); changed() }
+    func lighten() { dark = false; set(dark: false); changed() }
 
-    // the bottom (16 down), then one up: the lowest step that still lights
-    func darken() { dark = true; press(Array(repeating: Darkness.down, count: Darkness.steps) + [Darkness.up]); changed() }
-    func lighten() { dark = false; press(Array(repeating: Darkness.up, count: Darkness.steps)); changed() }
-
-    // the presses one after another, 30 ms apart, once ⌃⌥⌘ are let go (⌥ with the sun opens Displays settings)
-    private func press(_ keys: [CGKeyCode]) {
-        tick?.invalidate()
-        queue = keys
-        let since = Date()
-        tick = Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { [weak self] t in
-            guard let self else { t.invalidate(); return }
-            let held = NSEvent.modifierFlags.intersection([.control, .option, .command, .shift])
-            if !held.isEmpty && Date().timeIntervalSince(since) < 2 { return }
-            guard !self.queue.isEmpty else { t.invalidate(); return }
-            Darkness.key(self.queue.removeFirst())
+    // every display BetterDisplay knows, each its own process, all started together
+    private func set(dark: Bool) {
+        DispatchQueue.global().async {
+            let tags = Darkness.displays()
+            for (tag, builtIn) in tags {
+                let level = dark ? (builtIn ? Darkness.low : 0) : 1
+                Darkness.run(["set", "-tagID=\(tag)", "-hardwareBrightness=\(level)"], wait: false)
+            }
         }
     }
 
-    // one press of a brightness key, down and up, with no modifiers (⌃⌥⌘ may still be on the keyboard's state)
-    static func key(_ code: CGKeyCode) {
-        for down in [true, false] {
-            let e = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: down)
-            e?.flags = []
-            e?.post(tap: .cghidEventTap)
+    // [tagID: built-in?] of the displays connected now
+    static func displays() -> [(String, Bool)] {
+        guard let out = run(["get", "-identifiers"], wait: true),
+              let arr = try? JSONSerialization.jsonObject(with: Data(("[" + out + "]").utf8)) as? [[String: Any]] else { return [] }
+        return arr.compactMap { d in
+            guard d["deviceType"] as? String == "Display", let tag = d["tagID"] as? String else { return nil }
+            return (tag, (d["registryLocation"] as? String ?? "").contains("/disp0@"))
         }
     }
 
-    static var allowed: Bool { CGPreflightPostEventAccess() }
+    @discardableResult static func run(_ args: [String], wait: Bool) -> String? {
+        let p = Process(); p.executableURL = URL(fileURLWithPath: tool); p.arguments = args
+        let pipe = Pipe(); p.standardOutput = pipe; p.standardError = FileHandle.nullDevice
+        guard (try? p.run()) != nil else { return nil }
+        guard wait else { return nil }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile(); p.waitUntilExit()
+        return String(data: data, encoding: .utf8)
+    }
+
+    static var allowed: Bool { FileManager.default.isExecutableFile(atPath: tool) }
 }
 
 // MARK: ⌃⌥⌘F1, a Carbon hot key (no permission needed, the key does not reach the front app)
@@ -141,12 +147,12 @@ final class Window: NSObject {
         let spacer = NSView()
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         perm.isHidden = Darkness.allowed
-        perm.toolTip = "Posting the brightness keys needs Accessibility: click to open that page of System Settings"
+        perm.toolTip = "BetterDisplay is missing: it sets the brightness of both screens"
         let top = NSStackView(views: [title, word("ON", Ink.green, nil), off, spacer, topWord, perm, x])
         top.spacing = 10
 
         let key = wrapping(keyOK
-            ? "⌃⌥⌘F1 presses the brightness key down to the lowest light; ⌃⌥⌘F1 again presses it up to full light. The picture stays, VNC sees it."
+            ? "⌃⌥⌘F1 dims both screens together to the lowest light; ⌃⌥⌘F1 again brings both to full light. The picture stays, VNC sees it."
             : "⌃⌥⌘F1 is taken by another app, so the key does nothing. The button below still works.")
         if !keyOK { key.textColor = Ink.red }
         state.font = .monospacedSystemFont(ofSize: 12, weight: .semibold)
@@ -200,8 +206,7 @@ final class Window: NSObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { Darkness.shared.toggle() }
     }
     @objc func permissions() {
-        CGRequestPostEventAccess()
-        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+        NSWorkspace.shared.open(URL(string: "https://github.com/waydabber/BetterDisplay")!)
     }
     @objc func close() { window.orderOut(nil) }
     @objc func quit() { NSApp.terminate(nil) }

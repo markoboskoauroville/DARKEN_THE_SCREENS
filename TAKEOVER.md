@@ -1,5 +1,7 @@
 # TAKEOVER
 
+**2.11.2026, v4: both screens together.** The sun keys of v2/v3 reached only the display BetterDisplay handed them to, so one screen dimmed and the other not. v4 lists the displays (`BetterDisplay get -identifiers`) and sets `-hardwareBrightness` on each at once: built-in 0.0625, BenQ 0, light 1.0 for both. Tested through the toggle notification: before 1.0/1.0, dark 0.063/0.0, light 1.0/1.0. No more key presses, so no Accessibility; PERMISSIONS shows only if BetterDisplay is missing. **Waiting:** his own ⌃⌥⌘F1 and the star's row.
+
 **31.10.2026, v3: ON · OFF · TOP · ✕.** Marko: *"Each needs to have the same user interface elements. On, off and top"*. TOP beside ✕ on the window (green = `.floating`, UserDefaults `onTop`, applied at launch); OFF, TOP, PERMISSIONS, ✕ are Accessibility buttons (`off`, `top`, `permissions`, `close`); the bottom QUIT removed. `DarkenTheScreens --shot <png>` renders the window off screen at minimum size and prints the identifiers. Note: build.sh still ends the running copy with `pkill -x` (SIGTERM); quit it first (`osascript … to quit` works; at `--login` there is no window for AX).
 
 **30.10.2026, v2.** The darkness model of v1 (gamma to zero and black windows above everything) blacked out VNC as well. Marko asked for the brightness keys instead. v2 presses key code 145 (brightness down) sixteen times and 144 (up) once to darken, and 144 sixteen times to light. Built and installed. Measured from the shell: one press of 145 took the built-in display from 1.000 to 0.918, and 144 put it back.
