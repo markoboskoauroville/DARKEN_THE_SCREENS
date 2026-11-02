@@ -26,3 +26,8 @@ launch; the darkness is the brightness keys, no overlay, so nothing else is lift
 Accessibility identifiers; the QUIT at the bottom right removed ("No QUIT"). `--shot <png>` draws the window off screen at
 its minimum size (360 pt) and lists the identifiers: checked, nothing cut. The running copy quit by its Apple Event quit
 and reopened with `--login` (no window at login, as before).
+
+## 2.11.2026: both screens together
+> "please fix my darkening display star menu. It needs to darken both display at the same time and undarken both display at the same time"
+
+**Status:** saved; v4 being built: both displays set directly through BetterDisplay (built-in and BenQ at once), no key presses.
