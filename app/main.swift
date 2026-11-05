@@ -11,8 +11,10 @@
 import AppKit
 import Carbon
 
-let VERSION = 5
-let NAME = "Darken the Screens (Mantra)"
+let VERSION = 6
+// v6 (Marko, 5.11.2026): "rename ... to Screen Brightness Automatic"; the bundle id and the toggle notification keep the
+// old name, so the permissions and the star's switch stay as they were
+let NAME = "Screen Brightness Automatic (Mantra)"
 
 enum Ink {
     static let green = NSColor(calibratedRed: 0.30, green: 0.82, blue: 0.45, alpha: 1)
@@ -135,12 +137,12 @@ final class Window: NSObject {
             l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             return l
         }
-        let title = NSTextField(labelWithString: "DARKEN THE SCREENS")
+        let title = NSTextField(labelWithString: "SCREEN BRIGHTNESS AUTOMATIC")
         title.font = .monospacedSystemFont(ofSize: 13, weight: .bold)
         let x = NSButton(title: "", target: self, action: #selector(close))
         x.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: "close")?.withSymbolConfiguration(.init(pointSize: 14, weight: .semibold))
         x.imagePosition = .imageOnly; x.isBordered = false; x.contentTintColor = Ink.x
-        x.toolTip = "Close this window; Darken the Screens stays on and ⌃⌥⌘F1 still works"
+        x.toolTip = "Close this window; Screen Brightness Automatic stays on and ⌃⌥⌘F1 still works"
         x.widthAnchor.constraint(equalToConstant: 28).isActive = true
         x.heightAnchor.constraint(equalToConstant: 28).isActive = true
         x.setAccessibilityIdentifier("close"); x.setAccessibilityLabel("Close window")
