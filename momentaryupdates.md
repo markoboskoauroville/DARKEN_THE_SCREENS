@@ -43,3 +43,4 @@ and reopened with `--login` (no window at login, as before).
 
 "please rename my Darkened Screens mantra application to Screen Brightness Automatic make its background icon a black background, and the symbol is half sun, half moon, sharing one circle"
 **Status:** saved first.
+**Status (5.11.2026):** done: v6 Screen Brightness Automatic (Mantra), icon black with half sun half moon, built by GitHub, installed, running; star row renamed.
