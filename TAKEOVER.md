@@ -1,5 +1,10 @@
 # TAKEOVER
 
+**5.11.2026, v6: Screen Brightness Automatic (Mantra).** Renamed by Marko; icon black, one circle half sun half moon
+(STAR_SWIFT icons6 symbol `sunmoon`, letters SCR BRI). Bundle id and the toggle notification keep the old name
+(com.mantra.darkenthescreens) so permissions and the star switch stay. First GitHub Actions build (.github/workflows/build.yml).
+
+
 **2.11.2026, v5: 0% and 100%.** Marko: v4 followed on both screens but not to 0%. v5 sets hardwareBrightness AND softwareBrightness to 0 on every display (1 for light). Tested: dark 0/0 on both, light 1/1 on both; screencapture mean before and while dark the same (83.2), so VNC keeps the picture. **Confirmed by Marko** (2.11.2026): "yes, baba, it's perfect". Nothing waiting.
 
 **2.11.2026, v4: both screens together.** The sun keys of v2/v3 reached only the display BetterDisplay handed them to, so one screen dimmed and the other not. v4 lists the displays (`BetterDisplay get -identifiers`) and sets `-hardwareBrightness` on each at once: built-in 0.0625, BenQ 0, light 1.0 for both. Tested through the toggle notification: before 1.0/1.0, dark 0.063/0.0, light 1.0/1.0. No more key presses, so no Accessibility; PERMISSIONS shows only if BetterDisplay is missing. **Waiting:** his own ⌃⌥⌘F1 and the star's row.
