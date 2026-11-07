@@ -44,3 +44,6 @@ and reopened with `--login` (no window at login, as before).
 "please rename my Darkened Screens mantra application to Screen Brightness Automatic make its background icon a black background, and the symbol is half sun, half moon, sharing one circle"
 **Status:** saved first.
 **Status (5.11.2026):** done: v6 Screen Brightness Automatic (Mantra), icon black with half sun half moon, built by GitHub, installed, running; star row renamed.
+
+## 7.11.2026, 23:55 (hub session)
+"By the way. You need to Create debug screen brightness automatic was the rename in the meantime. Swift Matrix doesn't see it. Swift Matrix is open. It it recognized the old application which doesn't exist. Please look through the everything registered in Swift Matrix and why it registered applications which doesn't exist anymore and does not know about new name. Please fix that example: is this application? Screen Brightness Automatic. And maybe there are more applications like like this missing.sí Rename again screen brightness automatic to Screen brightness darkening the screen."

@@ -9,7 +9,7 @@ on:
 permissions:
   contents: write
 env:
-  APP: "Screen Brightness Automatic (Mantra)"
+  APP: "Screen Brightness Darkening the Screen (Mantra)"
   VERSION_FILE: app/main.swift
 jobs:
   build:
