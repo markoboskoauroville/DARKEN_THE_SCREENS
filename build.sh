@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 V=$(sed -n 's/^let VERSION = \([0-9]*\)/\1/p' app/main.swift)
 APP="build/Screen Brightness Darkening the Screen (Mantra).app"
 rm -rf build; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-swiftc -O -swift-version 5 -o "$APP/Contents/MacOS/DarkenTheScreens" app/*.swift -framework AppKit -framework Carbon -framework IOKit
+swiftc -O -swift-version 5 -o "$APP/Contents/MacOS/DarkenTheScreens" app/*.swift -framework AppKit -framework Carbon
 swift icon/make_icon.swift build/AppIcon.iconset && iconutil -c icns build/AppIcon.iconset -o "$APP/Contents/Resources/AppIcon.icns"
 cat > "$APP/Contents/Info.plist" <<PL
 <?xml version="1.0" encoding="UTF-8"?>

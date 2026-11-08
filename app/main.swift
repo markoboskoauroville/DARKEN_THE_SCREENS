@@ -11,7 +11,8 @@
 import AppKit
 import Carbon
 
-let VERSION = 8
+let VERSION = 9
+// v9 (8.11.2026): the keyboard is asked of G815 Lights over its night API; v8 wrote to the keyboard itself and G815 Lights painted over it.
 // v8 (Marko, 8.11.2026): the G815 keyboard goes dark with the screens, only ⌃ ⌥ ⌘ F1 left at the lowest light; light brings its own lighting back (Keyboard.swift).
 // v7 (Marko, 7.11.2026): "Rename again screen brightness automatic to Screen brightness darkening the screen"; same bundle id.
 // v6 (Marko, 5.11.2026): "rename ... to Screen Brightness Automatic"; the bundle id and the toggle notification keep the
@@ -44,7 +45,10 @@ final class Darkness {
 
     // every display BetterDisplay knows, each its own process, all started together
     private func set(dark: Bool) {
-        G815.shared.set(dark: dark)
+        // v9: the keyboard through G815 Lights' API (it owns the G815; Marko, 8.11.2026: "access this app ... and through
+        // API calls control it"): dark leaves only ⌃⌥⌘F1 at the lowest light, light brings the bank back
+        DistributedNotificationCenter.default().postNotificationName(.init("community.auroville.g815lights.night"), object: nil,
+                                                                     userInfo: ["on": dark ? "1" : "0"], deliverImmediately: true)
         DispatchQueue.global().async {
             let tags = Darkness.displays()
             // v5 (Marko, 2.11.2026: "not to 0%. I want complete darkness or complete lightness"): every screen to 0, the
