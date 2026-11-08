@@ -47,3 +47,7 @@ and reopened with `--login` (no window at login, as before).
 
 ## 7.11.2026, 23:55 (hub session)
 "By the way. You need to Create debug screen brightness automatic was the rename in the meantime. Swift Matrix doesn't see it. Swift Matrix is open. It it recognized the old application which doesn't exist. Please look through the everything registered in Swift Matrix and why it registered applications which doesn't exist anymore and does not know about new name. Please fix that example: is this application? Screen Brightness Automatic. And maybe there are more applications like like this missing.sí Rename again screen brightness automatic to Screen brightness darkening the screen."
+
+## 8.11.2026, 21:10 (hub session)
+"Shortcut key for darkening the screen is Control Command Alt F1. When I press this button, and you need to detect the actual keys that are going down to darken, you need to darken all the lights on my keyboard, leaving Control Command out and F1 on the lowest brightness, just so I can press it. Then, when I'm lighting the screen up, the keyboard comes back to the previous brightness."
+**Status:** saved first. Keyboard is the Logitech G815 (USB, HID++ per-key lighting).

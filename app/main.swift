@@ -11,7 +11,8 @@
 import AppKit
 import Carbon
 
-let VERSION = 7
+let VERSION = 8
+// v8 (Marko, 8.11.2026): the G815 keyboard goes dark with the screens, only ⌃ ⌥ ⌘ F1 left at the lowest light; light brings its own lighting back (Keyboard.swift).
 // v7 (Marko, 7.11.2026): "Rename again screen brightness automatic to Screen brightness darkening the screen"; same bundle id.
 // v6 (Marko, 5.11.2026): "rename ... to Screen Brightness Automatic"; the bundle id and the toggle notification keep the
 // old name, so the permissions and the star's switch stay as they were
@@ -43,6 +44,7 @@ final class Darkness {
 
     // every display BetterDisplay knows, each its own process, all started together
     private func set(dark: Bool) {
+        G815.shared.set(dark: dark)
         DispatchQueue.global().async {
             let tags = Darkness.displays()
             // v5 (Marko, 2.11.2026: "not to 0%. I want complete darkness or complete lightness"): every screen to 0, the
