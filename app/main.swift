@@ -11,7 +11,7 @@
 import AppKit
 import Carbon
 
-let VERSION = 9
+let VERSION = 10
 // v9 (8.11.2026): the keyboard is asked of G815 Lights over its night API; v8 wrote to the keyboard itself and G815 Lights painted over it.
 // v8 (Marko, 8.11.2026): the G815 keyboard goes dark with the screens, only ⌃ ⌥ ⌘ F1 left at the lowest light; light brings its own lighting back (Keyboard.swift).
 // v7 (Marko, 7.11.2026): "Rename again screen brightness automatic to Screen brightness darkening the screen"; same bundle id.
@@ -45,10 +45,8 @@ final class Darkness {
 
     // every display BetterDisplay knows, each its own process, all started together
     private func set(dark: Bool) {
-        // v9: the keyboard through G815 Lights' API (it owns the G815; Marko, 8.11.2026: "access this app ... and through
-        // API calls control it"): dark leaves only ⌃⌥⌘F1 at the lowest light, light brings the bank back
-        DistributedNotificationCenter.default().postNotificationName(.init("community.auroville.g815lights.night"), object: nil,
-                                                                     userInfo: ["on": dark ? "1" : "0"], deliverImmediately: true)
+        // v10 (Marko, 9.11.2026: "make the darkening app kick in G815 Lights if it is not running"): G815.night(dark)
+        G815.night(dark)
         DispatchQueue.global().async {
             let tags = Darkness.displays()
             // v5 (Marko, 2.11.2026: "not to 0%. I want complete darkness or complete lightness"): every screen to 0, the
@@ -85,6 +83,64 @@ final class Darkness {
 }
 
 // MARK: ⌃⌥⌘F1, a Carbon hot key (no permission needed, the key does not reach the front app)
+
+// v10: the keyboard goes through G815 Lights' night API; Darken starts it when it is not running, waits for its answer
+// (community.auroville.g815lights.night.ack, G815 Lights v32) and restarts it once when the API stays silent. Every step is logged to ~/.darken/log.txt.
+enum G815 {
+    static let id = "community.auroville.g815lights"
+    static let q = DispatchQueue(label: "g815.night")
+    static var acked = false
+    static func log(_ t: String) {
+        let d = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".darken")
+        try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
+        let f = DateFormatter(); f.dateFormat = "d.M.yyyy HH:mm:ss.SSS"
+        let line = f.string(from: Date()) + "  " + t + "\n"
+        let u = d.appendingPathComponent("log.txt")
+        if let h = try? FileHandle(forWritingTo: u) { h.seekToEndOfFile(); h.write(Data(line.utf8)); try? h.close() }
+        else { try? line.write(to: u, atomically: true, encoding: .utf8) }
+    }
+    static var running: NSRunningApplication? { NSRunningApplication.runningApplications(withBundleIdentifier: id).first }
+    static func appURL() -> URL? {
+        if let u = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) { return u }
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        return ["/Applications/G815 Lights.app", home + "/Developer/G815_LIGHTS/build/G815 Lights.app"]
+            .first { FileManager.default.fileExists(atPath: $0) }.map { URL(fileURLWithPath: $0) }
+    }
+    static func launch() -> Bool {
+        guard let u = appURL() else { log("G815 Lights not found anywhere"); return false }
+        log("starting G815 Lights: \(u.path)")
+        let p = Process(); p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        p.arguments = ["-g", u.path, "--args", "--background"]
+        try? p.run(); p.waitUntilExit()
+        for _ in 0..<50 { if running != nil { break }; Thread.sleep(forTimeInterval: 0.1) }
+        Thread.sleep(forTimeInterval: 1.5)             // its observer is up a moment after the process
+        log(running != nil ? "G815 Lights is up" : "G815 Lights did not start")
+        return running != nil
+    }
+    static func send(_ dark: Bool, wait: Double) -> Bool {
+        acked = false
+        DistributedNotificationCenter.default().postNotificationName(.init("community.auroville.g815lights.night"), object: nil,
+            userInfo: ["on": dark ? "1" : "0"], deliverImmediately: true)
+        let end = Date().addingTimeInterval(wait)
+        while Date() < end && !acked { Thread.sleep(forTimeInterval: 0.05) }
+        return acked
+    }
+    static func night(_ dark: Bool) {
+        q.async {
+            log("night \(dark ? "on" : "off")")
+            if running == nil { log("G815 Lights is not running"); _ = launch() }
+            if send(dark, wait: 1.5) { log("answered"); return }
+            log("no answer from the API; restarting G815 Lights once")
+            running?.terminate()
+            for _ in 0..<50 { if running == nil { break }; Thread.sleep(forTimeInterval: 0.1) }
+            if launch(), send(dark, wait: 3) { log("answered after the restart"); return }
+            log("FAILED: G815 Lights never answered the night API")
+        }
+    }
+    static func listen() {
+        DistributedNotificationCenter.default().addObserver(forName: .init("community.auroville.g815lights.night.ack"), object: nil, queue: nil) { _ in acked = true }
+    }
+}
 
 final class HotKey {
     static var handler: () -> Void = {}
@@ -227,6 +283,7 @@ final class Delegate: NSObject, NSApplicationDelegate {
     var win: Window!
     var hotkey: HotKey?
     func applicationDidFinishLaunching(_ n: Notification) {
+        G815.listen()
         HotKey.handler = { Darkness.shared.toggle() }
         hotkey = HotKey(code: UInt32(kVK_F1), mods: UInt32(controlKey | optionKey | cmdKey))
         win = Window(keyOK: hotkey != nil)

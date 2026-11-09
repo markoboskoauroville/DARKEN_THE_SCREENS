@@ -53,3 +53,7 @@ and reopened with `--login` (no window at login, as before).
 **Status:** saved first. Keyboard is the Logitech G815 (USB, HID++ per-key lighting).
 **Status (8.11.2026, 21:40):** v8 built by GitHub (run 42522642425 green), installed, signed Mantra Apps, running. Darkening sends the G815 to host mode, all keys off, ⌃ ⌥ ⌘ (both sides) and F1 at 0x0C white; lighting puts it back in onboard mode (its own lighting). Waiting for Marko's eye on the keyboard.
 **Status (8.11.2026, 22:11):** v8 was overridden by G815 Lights (it repaints the keyboard). v9 asks G815 Lights over its night API (v30); tested on camera both ways.
+
+## 9.11.2026: the keyboard no longer follows the darkening
+Marko: "Please look at the code that darkens the screen. Now it doesn't change my keyboard any more. The screen goes up and down in brightness, but the keyboard is not reacting." Then: "That's the mystery: G815 Lights is running, but it's not doing the thing." Then: "For the future, make the darkening app kick in G815 Lights if it is not running."
+Status: Darken v10 (starts G815 Lights if down, waits for its answer, restarts it once if silent, log ~/.darken/log.txt) and G815 Lights v32 (answers the night API, reopens the keyboard from nothing for every night call, a stuck paint flag can no longer swallow paints). Built by GitHub Actions; waiting for Marko to press ⌃⌥⌘F1 twice.

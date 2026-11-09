@@ -6,3 +6,6 @@
 - (30.10.2026) v1's black windows were in the frame itself, so VNC went black too. Darkening for the eyes only means the backlight, never the picture.
 - (2.11.2026) Brightness keys reach one display only (BetterDisplay sends them to the screen under the mouse). For both screens together set each directly: `BetterDisplay set -tagID=N -hardwareBrightness=x` (the app binary is the CLI); built-in is the one whose registryLocation has /disp0@. Use hardwareBrightness, never brightness, so no software dimming touches the picture.
 - (2.11.2026) hardwareBrightness 0 still lights (built-in and BenQ). Complete darkness = hardwareBrightness 0 plus softwareBrightness 0; the software dimming is not in the captured frame (screencapture mean unchanged), so VNC still sees the picture.
+
+## 9.11.2026: v10, the keyboard is G815 Lights' job and Darken makes sure it is up
+Marko: "make the darkening app kick in G815 Lights if it is not running." v9 posted the night notification blind. v10 (enum G815): not running → `open -g` by its full path (`--background`), up to 5 s, 1.5 s for its observer; post; wait up to 1.5 s for `community.auroville.g815lights.night.ack` (G815 Lights v32+); no answer → quit it, start it, post again (3 s); every step in ~/.darken/log.txt.
